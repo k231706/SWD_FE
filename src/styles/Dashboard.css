@@ -1,0 +1,233 @@
+/* Dashboard container */
+.dashboard-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 70vw;       /* chiếm toàn bộ chiều ngang */
+  min-height: 80vh;  /* full chiều cao màn hình */
+  box-sizing: border-box;
+}
+
+/* Card chung */
+.dashboard-card {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  padding: 20px;
+}
+
+/* Card title */
+.card-title {
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-top: 0;
+}
+
+/* Header */
+.page-title {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #111827;
+  margin-bottom: 12px;
+  margin-top: 12px;
+}
+
+.page-subtitle {
+  font-size: 0.9rem;
+  color: #666;
+}
+
+/* Stats Grid */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.stat-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  padding: 16px;
+}
+
+.stat-title {
+  font-size: 0.85rem;
+  color: #666;
+  margin: 0;
+}
+
+.stat-value {
+  font-size: 1.4rem;
+  font-weight: bold;
+  color: #111;
+  margin: 0;
+}
+
+/* Labs Grid */
+.labs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+.lab-card {
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  padding: 16px;
+  transition: border 0.2s ease;
+}
+
+.lab-card:hover {
+  border-color: #aaa;
+}
+
+.lab-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.lab-icon {
+  background: #eee;
+  border-radius: 50%;
+  padding: 10px;
+  width: 25px;      /* Chiều rộng cố định */
+  height: 25px;     /* Chiều cao cố định */
+  display: flex;    /* Căn giữa icon bên trong */
+  align-items: center;
+  justify-content: center;
+}
+
+.lab-info {
+  flex-grow: 1;
+}
+
+.lab-name {
+  font-weight: 600;
+  font-size: 0.95rem;
+  margin: 0;
+}
+
+.lab-location {
+  font-size: 0.85rem;
+  color: #666;
+  margin: 0;
+}
+
+.lab-status {
+  font-weight: 600;
+  font-size: 0.9rem;
+  padding: 4px 8px;
+  border-radius: 8px;
+  display: inline-block;
+  color: white;
+}
+
+.lab-status.active {
+  background-color: #28a745; /* xanh lá tươi */
+}
+
+.lab-status.maintenance {
+  background-color: #ff9800; /* cam / vàng */
+}
+
+.lab-card.available .lab-icon {
+  background: #e6f8ec;
+  color: #28a745;
+}
+
+.lab-card.maintenance .lab-icon {
+  background: #fdecea;
+  color: #dc3545;
+}
+
+.lab-meta {
+  margin-top: 20px;
+  font-size: 0.8rem;
+  color: #666;
+}
+
+/* Activity Grid */
+.activity-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 20px;
+}
+
+/* Timeline */
+.timeline {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.timeline-item {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.timeline-icon {
+  background: #007bff;
+  border-radius: 50%;
+  padding: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.timeline-content {
+  flex-grow: 1;
+}
+
+.timeline-content p {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.timeline-content span {
+  font-size: 0.8rem;
+  color: #777;
+}
+
+/* Upcoming Bookings */
+.upcoming-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.upcoming-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 12px;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+
+.upcoming-lab {
+  font-weight: 600;
+}
+
+.upcoming-purpose {
+  font-size: 0.85rem;
+  color: #555;
+}
+
+.upcoming-time {
+  text-align: right;
+  font-size: 0.85rem;
+  color: #333;
+}
+
+/* Empty states */
+.empty {
+  text-align: center;
+  color: #777;
+  font-size: 0.9rem;
+  padding: 12px 0;
+}

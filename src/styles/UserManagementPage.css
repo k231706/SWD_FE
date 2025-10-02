@@ -1,0 +1,209 @@
+/* ===== Layout tổng ===== */
+.layout {
+  display: flex;
+  min-height: 100vh;
+  width: 100%;
+  background: #f4f6f8;
+  font-family: 'Inter', sans-serif;
+  color: #1f2937;
+}
+
+.user-management {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* User Management Header */
+.user-management__header {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  padding: 20px;
+}
+
+/* Filters */
+.user-management__filters {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  align-items: center;
+}
+
+.search-box, .filter-box {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #f2f2f2;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.search-box {
+  flex: 10;
+}
+
+.filter-box {
+  flex: 2;
+}
+
+.search-box input {
+  border: none;
+  outline: none;
+  font-size: 0.95rem;
+  flex: 1;
+  background: #f2f2f2 !important;
+}
+
+.search-box input:focus {
+  outline: none; /* tắt outline khi focus */
+  box-shadow: none; /* tắt shadow khi focus */
+}
+
+.filter-box select {
+  border: none;
+  outline: none;
+  font-size: 0.95rem;
+  flex: 1;
+  background: #f2f2f2 !important;
+}
+
+.filter-box select:focus {
+  outline: none; /* tắt outline khi focus */
+  box-shadow: none; /* tắt shadow khi focus */
+}
+
+/* Table Style */
+.user-grid {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  overflow-x: auto;
+}
+
+.user-grid table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.user-grid th, .user-grid td {
+  padding: 12px 15px;
+  text-align: left;
+}
+
+.user-grid th {
+  background: #f9fafb;
+  font-weight: 600;
+  color: #374151;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.user-grid tr {
+  transition: background 0.2s ease;
+}
+
+.user-grid tr:hover {
+  background: #f3f4f6;
+}
+
+.user-grid td {
+  border-bottom: 1px solid #e5e7eb;
+}
+
+/* Avatar */
+.avatar {
+  width: 36px;
+  height: 36px;
+  background: #3b82f6;
+  color: white;
+  font-weight: 600;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+/* Action Buttons */
+.btn-view {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-edit {
+  background: #3b82f6;
+  color: white;
+}
+
+.btn-edit:hover {
+  background: #2563eb;
+}
+
+.btn-delete {
+  background: #ef4444;
+  color: white;
+}
+
+.btn-delete:hover {
+  background: #b91c1c;
+}
+
+/* No Data */
+.empty {
+  text-align: center;
+  padding: 2rem;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  color: #6b7280;
+}
+
+/* Modal */
+.user-management-modal {
+  position: fixed;
+  top: 0; 
+  left: 0; 
+  width: 100vw; 
+  height: 100vh;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 12px;
+  padding: 1.8rem;
+  width: 480px;
+  max-width: 95%;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+}
+
+.modal-content h3 {
+  margin-top: 0;
+}
+
+.modal-content button {
+  margin-top: 1rem;
+  padding: 0.5rem 1rem;
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.modal-content button:hover {
+  background: #2563eb;
+}

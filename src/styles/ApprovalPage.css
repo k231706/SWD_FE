@@ -1,0 +1,195 @@
+.approval-page {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.approval-header {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  padding: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.header{
+  font-size: 1.5rem;
+  margin: 0;
+}
+
+.filter {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit,minmax(200px,1fr));
+  gap: 1rem;
+}
+
+.approval-page-stat {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  padding: 16px;
+}
+
+.no-request, .no-request-detail {
+  margin-top: 10px;
+  margin-bottom: 0;
+}
+
+.stat-icon {
+  width: 24px;
+  height: 24px;
+}
+
+.stat-icon.yellow { color: #f59e0b; }
+.stat-icon.red { color: #ef4444; }
+.stat-icon.blue { color: #3b82f6; }
+
+.booking-card {
+  background: white;
+  border-radius: 8px;
+  padding: 1rem;
+  border-left: 4px solid #3b82f6;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+}
+
+.booking-card.urgent {
+  border-left-color: #ef4444;
+}
+
+.booking-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.urgent-badge {
+  background: #fee2e2;
+  color: #b91c1c;
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.booking-info {
+  margin-top: 0.5rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit,minmax(150px,1fr));
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  color: #555;
+}
+
+.booking-purpose {
+  margin: 1rem 0;
+  padding: 0.5rem;
+  background: #f9fafb;
+  border-radius: 6px;
+}
+
+.booking-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.8rem;
+  color: #666;
+}
+
+.actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.btn-reject, .btn-approve, .btn-cancel, .btn-confirm {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  border-radius: 6px;
+  padding: 0.4rem 0.75rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+  border: none;
+}
+
+.btn-reject {
+  background: white;
+  border: 1px solid #fca5a5;
+  color: #b91c1c;
+}
+
+.btn-approve {
+  background: #16a34a;
+  color: white;
+}
+
+.btn-cancel {
+  background: white;
+  border: 1px solid #ccc;
+}
+
+.btn-confirm {
+  background: #dc2626;
+  color: white;
+}
+
+.no-bookings {
+  background: white;
+  border-radius: 8px;
+  padding: 2rem;
+  text-align: center;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: start;
+  justify-content: center;
+  padding-top: 5rem;
+}
+
+.modal {
+  background: white;
+  border-radius: 8px;
+  padding: 1rem;
+  width: 400px;
+  max-width: 90%;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.modal textarea {
+  width: 100%;
+  min-height: 100px;
+  padding: 0.5rem;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  margin-bottom: 1rem;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
