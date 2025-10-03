@@ -224,8 +224,8 @@ export const BookingPage = () => {
               return (
                 <div key={b.id} className="booking-item">
                   <div>
-                    <h4>{lab?.name}</h4>
-                    <p>{b.purpose}</p>
+                    <h4 className="booking-lab-name">{lab?.name}</h4>
+                    <p className="booking-lab-purpose">{b.purpose}</p>
                     <div className="time-info">
                       <Calendar className="icon-small" />
                       {new Date(b.startTime).toLocaleDateString('vi-VN')}
@@ -233,7 +233,7 @@ export const BookingPage = () => {
                       {new Date(b.startTime).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
                     </div>
                   </div>
-                  <span className={`status status-${b.status}`}>
+                  <span className={`booking-page-status status-${b.status}`}>
                     {getStatusText(b.status)}
                   </span>
                 </div>
