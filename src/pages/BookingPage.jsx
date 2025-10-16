@@ -3,6 +3,14 @@ import { useLabStore, useBookingStore, useAuthStore } from '../store';
 import { Calendar, Clock, Send, CheckCircle } from 'lucide-react';
 import '../styles/BookingPage.css';
 
+// CHANGED: Định nghĩa các ca học cố định
+const timeSlots = [
+  { value: 'slot1', label: 'Slot 1: 07:00 - 09:15', startTime: '07:00', endTime: '09:15' },
+  { value: 'slot2', label: 'Slot 2: 09:30 - 11:45', startTime: '09:30', endTime: '11:45' },
+  { value: 'slot3', label: 'Slot 3: 12:30 - 14:45', startTime: '12:30', endTime: '14:45' },
+  { value: 'slot4', label: 'Slot 4: 15:00 - 17:15', startTime: '15:00', endTime: '17:15' },
+];
+
 export const BookingPage = () => {
   const { user } = useAuthStore();
   const { labs, fetchLabs } = useLabStore();
@@ -10,9 +18,8 @@ export const BookingPage = () => {
 
   const [formData, setFormData] = useState({
     labId: '',
-    startDate: '',
+    bookingDate: '',
     startTime: '',
-    endDate: '',
     endTime: '',
     purpose: '',
   });
@@ -29,23 +36,15 @@ export const BookingPage = () => {
     const newErrors = {};
 
     if (!formData.labId) newErrors.labId = 'Vui lòng chọn phòng lab';
-    if (!formData.startDate) newErrors.startDate = 'Vui lòng chọn ngày bắt đầu';
-    if (!formData.startTime) newErrors.startTime = 'Vui lòng chọn giờ bắt đầu';
-    if (!formData.endDate) newErrors.endDate = 'Vui lòng chọn ngày kết thúc';
-    if (!formData.endTime) newErrors.endTime = 'Vui lòng chọn giờ kết thúc';
+    if (!formData.bookingDate) newErrors.bookingDate = 'Vui lòng chọn ngày đặt';
+    if (!formData.startTime) newErrors.timeSlot = 'Vui lòng chọn ca học';
     if (!formData.purpose.trim()) newErrors.purpose = 'Vui lòng nhập mục đích sử dụng';
 
-    // Validate dates
-    if (formData.startDate && formData.endDate) {
-      const startDateTime = new Date(`${formData.startDate}T${formData.startTime}`);
-      const endDateTime = new Date(`${formData.endDate}T${formData.endTime}`);
+    if (formData.bookingDate && formData.startTime) {
+      const startDateTime = new Date(`${formData.bookingDate}T${formData.startTime}`);
       const now = new Date();
-
       if (startDateTime < now) {
-        newErrors.startDate = 'Thời gian bắt đầu phải sau thời điểm hiện tại';
-      }
-      if (endDateTime <= startDateTime) {
-        newErrors.endDate = 'Thời gian kết thúc phải sau thời gian bắt đầu';
+        newErrors.bookingDate = 'Thời gian bắt đầu phải sau thời điểm hiện tại';
       }
     }
 
@@ -60,8 +59,8 @@ export const BookingPage = () => {
     const bookingData = {
       labId: formData.labId,
       requesterId: user.id,
-      startTime: `${formData.startDate}T${formData.startTime}`,
-      endTime: `${formData.endDate}T${formData.endTime}`,
+      startTime: `${formData.bookingDate}T${formData.startTime}`,
+      endTime: `${formData.bookingDate}T${formData.endTime}`,
       purpose: formData.purpose,
       status: 'pending',
     };
@@ -71,9 +70,8 @@ export const BookingPage = () => {
       setShowSuccess(true);
       setFormData({
         labId: '',
-        startDate: '',
+        bookingDate: '',
         startTime: '',
-        endDate: '',
         endTime: '',
         purpose: '',
       });
@@ -85,6 +83,24 @@ export const BookingPage = () => {
     setFormData(prev => ({ ...prev, [field]: value }));
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: '' }));
+    }
+  };
+
+  const handleSlotChange = (slotValue) => {
+    if (!slotValue) {
+      setFormData(prev => ({ ...prev, startTime: '', endTime: '' }));
+      return;
+    }
+    const selectedSlot = timeSlots.find(slot => slot.value === slotValue);
+    if (selectedSlot) {
+      setFormData(prev => ({
+        ...prev,
+        startTime: selectedSlot.startTime,
+        endTime: selectedSlot.endTime,
+      }));
+    }
+    if (errors.timeSlot) {
+      setErrors(prev => ({ ...prev, timeSlot: '' }));
     }
   };
 
@@ -122,7 +138,9 @@ export const BookingPage = () => {
           <CheckCircle className="icon" />
           <div>
             <p className="success-title">Yêu cầu đặt lịch đã được gửi thành công!</p>
-            <p className="success-text">Yêu cầu của bạn đang chờ được phê duyệt bởi quản lý lab.</p>
+            <p className="success-text">
+              Yêu cầu của bạn đang chờ được phê duyệt bởi quản lý lab.
+            </p>
           </div>
         </div>
       )}
@@ -149,46 +167,32 @@ export const BookingPage = () => {
               {errors.labId && <p className="error">{errors.labId}</p>}
             </div>
 
-            {/* Date & Time */}
+            {/* Date & Time Slot Selection */}
             <div className="form-row">
               <div className="form-group">
-                <label>Ngày bắt đầu</label>
+                <label>Ngày đặt</label>
                 <input
                   type="date"
-                  value={formData.startDate}
-                  onChange={(e) => handleInputChange('startDate', e.target.value)}
+                  value={formData.bookingDate}
+                  onChange={(e) => handleInputChange('bookingDate', e.target.value)}
                 />
-                {errors.startDate && <p className="error">{errors.startDate}</p>}
+                {errors.bookingDate && <p className="error">{errors.bookingDate}</p>}
               </div>
-              <div className="form-group">
-                <label>Giờ bắt đầu</label>
-                <input
-                  type="time"
-                  value={formData.startTime}
-                  onChange={(e) => handleInputChange('startTime', e.target.value)}
-                />
-                {errors.startTime && <p className="error">{errors.startTime}</p>}
-              </div>
-            </div>
 
-            <div className="form-row">
               <div className="form-group">
-                <label>Ngày kết thúc</label>
-                <input
-                  type="date"
-                  value={formData.endDate}
-                  onChange={(e) => handleInputChange('endDate', e.target.value)}
-                />
-                {errors.endDate && <p className="error">{errors.endDate}</p>}
-              </div>
-              <div className="form-group">
-                <label>Giờ kết thúc</label>
-                <input
-                  type="time"
-                  value={formData.endTime}
-                  onChange={(e) => handleInputChange('endTime', e.target.value)}
-                />
-                {errors.endTime && <p className="error">{errors.endTime}</p>}
+                <label>Ca học</label>
+                <select
+                  value={timeSlots.find(s => s.startTime === formData.startTime)?.value || ''}
+                  onChange={(e) => handleSlotChange(e.target.value)}
+                >
+                  <option value="">Chọn ca học...</option>
+                  {timeSlots.map(slot => (
+                    <option key={slot.value} value={slot.value}>
+                      {slot.label}
+                    </option>
+                  ))}
+                </select>
+                {errors.timeSlot && <p className="error">{errors.timeSlot}</p>}
               </div>
             </div>
 
@@ -206,7 +210,7 @@ export const BookingPage = () => {
             {/* Submit */}
             <div className="form-actions">
               <button type="submit" disabled={isLoading}>
-                {isLoading ? "Đang gửi..." : "Gửi yêu cầu"}
+                {isLoading ? 'Đang gửi...' : 'Gửi yêu cầu'}
               </button>
             </div>
           </form>
@@ -219,6 +223,7 @@ export const BookingPage = () => {
             {getMyBookings().length === 0 && (
               <p className="booking-page-empty">Bạn chưa có lịch đặt nào</p>
             )}
+
             {getMyBookings().slice(0, 5).map(b => {
               const lab = labs.find(l => l.id === b.labId);
               return (
@@ -230,7 +235,10 @@ export const BookingPage = () => {
                       <Calendar className="icon-small" />
                       {new Date(b.startTime).toLocaleDateString('vi-VN')}
                       <Clock className="icon-small" />
-                      {new Date(b.startTime).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
+                      {new Date(b.startTime).toLocaleTimeString('vi-VN', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
                     </div>
                   </div>
                   <span className={`booking-page-status status-${b.status}`}>
