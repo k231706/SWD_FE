@@ -7,6 +7,8 @@ import { BookingPage } from './pages/BookingPage';
 import { ApprovalPage } from './pages/ApprovalPage';
 import { AccessRequestPage } from './pages/AccessRequestPage';
 import { UserManagementPage } from './pages/UserManagementPage';
+import { NotificationsPage } from './pages/NotificationsPage';
+import { ReportsPage } from './pages/ReportsPage';
 
 import './App.css';
 
@@ -33,21 +35,11 @@ function App() {
           </div>
         );
       case 'reports':
-        return (
-          <div className="page-card">
-            <h2 className="page-title">Báo cáo</h2>
-            <p className="page-text">Tính năng báo cáo đang được phát triển...</p>
-          </div>
-        );
+        return <ReportsPage />;
       case 'users':
         return <UserManagementPage />;
       case 'notifications':
-        return (
-          <div className="page-card">
-            <h2 className="page-title">Thông báo</h2>
-            <p className="page-text">Tính năng thông báo đang được phát triển...</p>
-          </div>
-        );
+        return <NotificationsPage />;
       default:
         return <Dashboard />;
     }
