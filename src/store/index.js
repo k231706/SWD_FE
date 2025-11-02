@@ -1,5 +1,7 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
+import { googleSignIn, signIn as apiSignIn } from '../api/auth';
+import { signInWithGoogle as firebaseSignInWithGoogle } from '../firebase/auth';
 
 // Mock data for development
 const mockUsers = [
@@ -107,18 +109,93 @@ export const useAuthStore = create(
       login: async (email, password) => {
         set({ isLoading: true });
 
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-
-        const { users } = get();
-        const user = users.find((u) => u.email === email);
-
-        if (user && password === 'password') {
-          set({ user, isAuthenticated: true, isLoading: false });
+        try {
+          // Call API
+          const response = await apiSignIn(email, password);
+          
+          // Store user info
+          set({ 
+            user: response.user, 
+            isAuthenticated: true, 
+            isLoading: false 
+          });
           return true;
-        }
+        } catch (error) {
+          console.error('Login failed:', error);
+          
+          // Fallback to mock data for development
+          await new Promise((resolve) => setTimeout(resolve, 1000));
+          const { users } = get();
+          const user = users.find((u) => u.email === email);
 
-        set({ isLoading: false });
-        return false;
+          if (user && password === 'password') {
+            set({ user, isAuthenticated: true, isLoading: false });
+            return true;
+          }
+
+          set({ isLoading: false });
+          return false;
+        }
+      },
+
+      loginWithGoogle: async (token) => {
+        set({ isLoading: true });
+
+        try {
+          // Call Google Sign In API
+          const response = await googleSignIn(token);
+          
+          // Store user info
+          set({ 
+            user: response.user, 
+            isAuthenticated: true, 
+            isLoading: false 
+          });
+          return true;
+        } catch (error) {
+          console.error('Google login failed:', error);
+          set({ isLoading: false });
+          return false;
+        }
+      },
+
+      loginWithGoogleFirebase: async () => {
+        set({ isLoading: true });
+
+        try {
+          // Sign in with Firebase Google
+          const result = await firebaseSignInWithGoogle();
+          
+          // Optionally send token to backend
+          try {
+            const response = await googleSignIn(result.idToken);
+            // If backend returns user info, use it
+            set({ 
+              user: response.user || result.user, 
+              isAuthenticated: true, 
+              isLoading: false 
+            });
+          } catch (backendError) {
+            // If backend fails, use Firebase user directly
+            console.warn('Backend login failed, using Firebase user:', backendError);
+            set({ 
+              user: {
+                id: result.user.uid,
+                email: result.user.email,
+                name: result.user.displayName || result.user.email,
+                photoURL: result.user.photoURL,
+              }, 
+              isAuthenticated: true, 
+              isLoading: false 
+            });
+          }
+          
+          return true;
+        } catch (error) {
+          console.error('Firebase Google login failed:', error);
+          set({ isLoading: false });
+          return false;
+        }
       },
 
       register: async (userData) => {
