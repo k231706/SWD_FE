@@ -11,7 +11,7 @@ export const NotificationsPage = () => {
     todaySchedule: null
   });
 
-  // Tính toán giờ làm việc
+  // 🕒 Tính toán giờ làm việc (đã sửa: kết thúc lúc 22h)
   useEffect(() => {
     const checkWorkingHours = () => {
       const now = new Date();
@@ -21,12 +21,12 @@ export const NotificationsPage = () => {
       let schedule = null;
       let isWorking = false;
 
-      // Thứ 2 -> Thứ 6 (1-5): 7h -> 10h
+      // Thứ 2 -> Thứ 6 (1-5): 7h -> 22h ✅
       if (dayOfWeek >= 1 && dayOfWeek <= 5) {
-        schedule = { start: 7, end: 10 };
-        isWorking = currentHour >= 7 && currentHour < 10;
+        schedule = { start: 7, end: 22 };
+        isWorking = currentHour >= 7 && currentHour < 22;
       }
-      // Thứ 7 và Chủ nhật (6, 0): 9h -> 6h (9h -> 18h)
+      // Thứ 7 và Chủ nhật (6, 0): 9h -> 18h
       else if (dayOfWeek === 6 || dayOfWeek === 0) {
         schedule = { start: 9, end: 18 };
         isWorking = currentHour >= 9 && currentHour < 18;
@@ -61,7 +61,7 @@ export const NotificationsPage = () => {
   const getScheduleText = () => {
     const dayOfWeek = workingHours.currentTime.getDay();
     if (dayOfWeek >= 1 && dayOfWeek <= 5) {
-      return 'Thứ 2 - Thứ 6: 7:00 - 10:00';
+      return 'Thứ 2 - Thứ 6: 7:00 - 22:00'; // ✅ Sửa text hiển thị
     } else {
       return 'Thứ 7 - Chủ nhật: 9:00 - 18:00';
     }
@@ -172,4 +172,3 @@ export const NotificationsPage = () => {
     </div>
   );
 };
-
