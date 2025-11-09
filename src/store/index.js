@@ -21,6 +21,16 @@ import {
   assignRoomSlotsByDate as apiAssignRoomSlotsByDate,
   getRoomSlotsByLabId as apiGetRoomSlotsByLabId
 } from '../api/labs';
+import {
+  getAllBookings as apiGetAllBookings,
+  getBookingById as apiGetBookingById,
+  createBooking as apiCreateBooking,
+  updateBooking as apiUpdateBooking,
+  deleteBooking as apiDeleteBooking,
+  approveBooking as apiApproveBooking,
+  rejectBooking as apiRejectBooking,
+  getPendingBookings as apiGetPendingBookings
+} from '../api/bookings';
 
 // Auth Store
 export const useAuthStore = create(
@@ -470,92 +480,169 @@ export const useBookingStore = create(
       pendingBookings: [],
       isLoading: false,
 
-      createBooking: async (bookingData) => {
+      // GET /bookings - Get all bookings
+      fetchBookings: async (filters = {}) => {
         set({ isLoading: true });
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-
-        const newBooking = {
-          ...bookingData,
-          id: Date.now().toString(),
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        };
-
-        const { bookings, pendingBookings } = get();
-        set({
-          bookings: [...bookings, newBooking],
-          pendingBookings: [...pendingBookings, newBooking],
-          isLoading: false,
-        });
-
-        return true;
+        try {
+          const bookings = await apiGetAllBookings(filters);
+          const bookingsArray = Array.isArray(bookings) ? bookings : [];
+          set({ bookings: bookingsArray, isLoading: false });
+          return bookingsArray;
+        } catch (error) {
+          console.error('Failed to fetch bookings:', error);
+          set({ bookings: [], isLoading: false });
+          throw error;
+        }
       },
 
-      approveBooking: async (bookingId) => {
-        set({ isLoading: true });
-        await new Promise((resolve) => setTimeout(resolve, 500));
-
-        const { bookings, pendingBookings } = get();
-        const updatedBookings = bookings.map((booking) =>
-          booking.id === bookingId
-            ? {
-                ...booking,
-                status: 'approved',
-                updatedAt: new Date().toISOString(),
-              }
-            : booking
-        );
-        const updatedPendingBookings = pendingBookings.filter(
-          (booking) => booking.id !== bookingId
-        );
-
-        set({
-          bookings: updatedBookings,
-          pendingBookings: updatedPendingBookings,
-          isLoading: false,
-        });
-
-        return true;
-      },
-
-      rejectBooking: async (bookingId, reason) => {
-        set({ isLoading: true });
-        await new Promise((resolve) => setTimeout(resolve, 500));
-
-        const { bookings, pendingBookings } = get();
-        const updatedBookings = bookings.map((booking) =>
-          booking.id === bookingId
-            ? {
-                ...booking,
-                status: 'rejected',
-                rejectedReason: reason,
-                updatedAt: new Date().toISOString(),
-              }
-            : booking
-        );
-        const updatedPendingBookings = pendingBookings.filter(
-          (booking) => booking.id !== bookingId
-        );
-
-        set({
-          bookings: updatedBookings,
-          pendingBookings: updatedPendingBookings,
-          isLoading: false,
-        });
-
-        return true;
-      },
-
-      fetchBookings: async () => {
-        set({ isLoading: true });
-        await new Promise((resolve) => setTimeout(resolve, 500));
-        set({ bookings: [], isLoading: false });
-      },
-
+      // GET /bookings/pending - Get pending bookings
       fetchPendingBookings: async () => {
         set({ isLoading: true });
-        await new Promise((resolve) => setTimeout(resolve, 500));
-        set({ pendingBookings: [], isLoading: false });
+        try {
+          const pendingBookings = await apiGetPendingBookings();
+          const pendingArray = Array.isArray(pendingBookings) ? pendingBookings : [];
+          set({ pendingBookings: pendingArray, isLoading: false });
+          return pendingArray;
+        } catch (error) {
+          console.error('Failed to fetch pending bookings:', error);
+          set({ pendingBookings: [], isLoading: false });
+          throw error;
+        }
+      },
+
+      // GET /bookings/{id} - Get booking by ID
+      fetchBookingById: async (id) => {
+        set({ isLoading: true });
+        try {
+          const booking = await apiGetBookingById(id);
+          set({ isLoading: false });
+          return booking;
+        } catch (error) {
+          console.error('Failed to fetch booking by ID:', error);
+          set({ isLoading: false });
+          throw error;
+        }
+      },
+
+      // POST /bookings - Create new booking
+      createBooking: async (bookingData) => {
+        set({ isLoading: true });
+        try {
+          const newBooking = await apiCreateBooking(bookingData);
+          const { bookings, pendingBookings } = get();
+          const updatedBookings = [newBooking, ...bookings];
+          const updatedPending = newBooking.status === 'pending' 
+            ? [newBooking, ...pendingBookings] 
+            : pendingBookings;
+          set({
+            bookings: updatedBookings,
+            pendingBookings: updatedPending,
+            isLoading: false,
+          });
+          return newBooking;
+        } catch (error) {
+          console.error('Failed to create booking:', error);
+          set({ isLoading: false });
+          throw error;
+        }
+      },
+
+      // PUT /bookings/{id} - Update booking
+      updateBooking: async (id, bookingData) => {
+        set({ isLoading: true });
+        try {
+          const updatedBooking = await apiUpdateBooking(id, bookingData);
+          const { bookings, pendingBookings } = get();
+          const updatedBookings = bookings.map((b) => 
+            (b.bookingId === id || b.id === id) ? updatedBooking : b
+          );
+          const updatedPending = updatedBooking.status === 'pending'
+            ? pendingBookings.map((b) => 
+                (b.bookingId === id || b.id === id) ? updatedBooking : b
+              )
+            : pendingBookings.filter((b) => b.bookingId !== id && b.id !== id);
+          set({
+            bookings: updatedBookings,
+            pendingBookings: updatedPending,
+            isLoading: false,
+          });
+          return updatedBooking;
+        } catch (error) {
+          console.error('Failed to update booking:', error);
+          set({ isLoading: false });
+          throw error;
+        }
+      },
+
+      // DELETE /bookings/{id} - Delete booking
+      deleteBooking: async (id) => {
+        set({ isLoading: true });
+        try {
+          await apiDeleteBooking(id);
+          const { bookings, pendingBookings } = get();
+          const filteredBookings = bookings.filter((b) => b.bookingId !== id && b.id !== id);
+          const filteredPending = pendingBookings.filter((b) => b.bookingId !== id && b.id !== id);
+          set({
+            bookings: filteredBookings,
+            pendingBookings: filteredPending,
+            isLoading: false,
+          });
+          return true;
+        } catch (error) {
+          console.error('Failed to delete booking:', error);
+          set({ isLoading: false });
+          throw error;
+        }
+      },
+
+      // PATCH /bookings/{id}/approve - Approve booking
+      approveBooking: async (bookingId, approveData = {}) => {
+        set({ isLoading: true });
+        try {
+          const updatedBooking = await apiApproveBooking(bookingId, approveData);
+          const { bookings, pendingBookings } = get();
+          const updatedBookings = bookings.map((b) => 
+            (b.bookingId === bookingId || b.id === bookingId) ? updatedBooking : b
+          );
+          const updatedPending = pendingBookings.filter(
+            (b) => b.bookingId !== bookingId && b.id !== bookingId
+          );
+          set({
+            bookings: updatedBookings,
+            pendingBookings: updatedPending,
+            isLoading: false,
+          });
+          return updatedBooking;
+        } catch (error) {
+          console.error('Failed to approve booking:', error);
+          set({ isLoading: false });
+          throw error;
+        }
+      },
+
+      // PATCH /bookings/{id}/reject - Reject booking
+      rejectBooking: async (bookingId, rejectData) => {
+        set({ isLoading: true });
+        try {
+          const updatedBooking = await apiRejectBooking(bookingId, rejectData);
+          const { bookings, pendingBookings } = get();
+          const updatedBookings = bookings.map((b) => 
+            (b.bookingId === bookingId || b.id === bookingId) ? updatedBooking : b
+          );
+          const updatedPending = pendingBookings.filter(
+            (b) => b.bookingId !== bookingId && b.id !== bookingId
+          );
+          set({
+            bookings: updatedBookings,
+            pendingBookings: updatedPending,
+            isLoading: false,
+          });
+          return updatedBooking;
+        } catch (error) {
+          console.error('Failed to reject booking:', error);
+          set({ isLoading: false });
+          throw error;
+        }
       },
     }),
     { name: 'booking-store' }

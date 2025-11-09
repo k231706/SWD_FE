@@ -1,5 +1,6 @@
 // Export all API functions from a single entry point
 export * from './auth';
+export * from './bookings';
 export * from './incidents';
 export * from './incidentTypes';
 export * from './labs';

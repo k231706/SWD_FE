@@ -56,26 +56,33 @@ export const BookingPage = () => {
     e.preventDefault();
     if (!validateForm() || !user) return;
 
-    const bookingData = {
-      labId: formData.labId,
-      requesterId: user.id,
-      startTime: `${formData.bookingDate}T${formData.startTime}`,
-      endTime: `${formData.bookingDate}T${formData.endTime}`,
-      purpose: formData.purpose,
-      status: 'pending',
-    };
+    try {
+      const bookingData = {
+        labId: formData.labId,
+        requesterId: user.id || user.userId,
+        startTime: `${formData.bookingDate}T${formData.startTime}:00`,
+        endTime: `${formData.bookingDate}T${formData.endTime}:00`,
+        purpose: formData.purpose,
+        status: 'pending',
+      };
 
-    const success = await createBooking(bookingData);
-    if (success) {
-      setShowSuccess(true);
-      setFormData({
-        labId: '',
-        bookingDate: '',
-        startTime: '',
-        endTime: '',
-        purpose: '',
-      });
-      setTimeout(() => setShowSuccess(false), 5000);
+      const newBooking = await createBooking(bookingData);
+      if (newBooking) {
+        setShowSuccess(true);
+        setFormData({
+          labId: '',
+          bookingDate: '',
+          startTime: '',
+          endTime: '',
+          purpose: '',
+        });
+        // Refresh bookings list
+        await fetchBookings();
+        setTimeout(() => setShowSuccess(false), 5000);
+      }
+    } catch (error) {
+      console.error('Failed to create booking:', error);
+      setErrors({ submit: error.response?.data?.message || 'Không thể tạo booking. Vui lòng thử lại.' });
     }
   };
 
@@ -106,9 +113,14 @@ export const BookingPage = () => {
 
   const getMyBookings = () => {
     if (!user) return [];
+    const userId = user.id || user.userId;
     return bookings
-      .filter(b => b.requesterId === user.id)
-      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      .filter(b => (b.requesterId === userId) || (b.requester?.userId === userId) || (b.requester?.id === userId))
+      .sort((a, b) => {
+        const dateA = new Date(a.createdAt || a.created_at || 0);
+        const dateB = new Date(b.createdAt || b.created_at || 0);
+        return dateB - dateA;
+      });
   };
 
   const getStatusText = (status) => {
@@ -158,11 +170,16 @@ export const BookingPage = () => {
                 onChange={(e) => handleInputChange('labId', e.target.value)}
               >
                 <option value="">Chọn phòng lab...</option>
-                {labs.filter(l => l.isAvailable).map(lab => (
-                  <option key={lab.id} value={lab.id}>
-                    {lab.name} - {lab.location} (Sức chứa: {lab.capacity})
-                  </option>
-                ))}
+                {labs
+                  .filter(l => l.isAvailable !== false && (l.status === 'ACTIVE' || l.status === 'active' || l.status === 'Active' || !l.status))
+                  .map(lab => {
+                    const labId = lab.id || lab.labId;
+                    return (
+                      <option key={labId} value={labId}>
+                        {lab.name || 'N/A'} - {lab.location || 'N/A'} {lab.capacity ? `(Sức chứa: ${lab.capacity})` : ''}
+                      </option>
+                    );
+                  })}
               </select>
               {errors.labId && <p className="error">{errors.labId}</p>}
             </div>
@@ -209,6 +226,7 @@ export const BookingPage = () => {
 
             {/* Submit */}
             <div className="form-actions">
+              {errors.submit && <p className="error" style={{ marginBottom: '1rem' }}>{errors.submit}</p>}
               <button type="submit" disabled={isLoading}>
                 {isLoading ? 'Đang gửi...' : 'Gửi yêu cầu'}
               </button>
@@ -225,24 +243,27 @@ export const BookingPage = () => {
             )}
 
             {getMyBookings().slice(0, 5).map(b => {
-              const lab = labs.find(l => l.id === b.labId);
+              const bookingId = b.id || b.bookingId;
+              const labId = b.labId || b.lab?.labId || b.lab?.id;
+              const lab = labs.find(l => (l.id === labId) || (l.labId === labId));
+              const startTime = b.startTime || b.start_time;
               return (
-                <div key={b.id} className="booking-item">
+                <div key={bookingId} className="booking-item">
                   <div>
-                    <h4 className="booking-lab-name">{lab?.name}</h4>
-                    <p className="booking-lab-purpose">{b.purpose}</p>
+                    <h4 className="booking-lab-name">{lab?.name || 'N/A'}</h4>
+                    <p className="booking-lab-purpose">{b.purpose || 'N/A'}</p>
                     <div className="time-info">
                       <Calendar className="icon-small" />
-                      {new Date(b.startTime).toLocaleDateString('vi-VN')}
+                      {startTime ? new Date(startTime).toLocaleDateString('vi-VN') : 'N/A'}
                       <Clock className="icon-small" />
-                      {new Date(b.startTime).toLocaleTimeString('vi-VN', {
+                      {startTime ? new Date(startTime).toLocaleTimeString('vi-VN', {
                         hour: '2-digit',
                         minute: '2-digit',
-                      })}
+                      }) : 'N/A'}
                     </div>
                   </div>
-                  <span className={`booking-page-status status-${b.status}`}>
-                    {getStatusText(b.status)}
+                  <span className={`booking-page-status status-${b.status || 'pending'}`}>
+                    {getStatusText(b.status || 'pending')}
                   </span>
                 </div>
               );
