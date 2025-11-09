@@ -32,12 +32,12 @@ export const Dashboard = () => {
   useEffect(() => {
     const today = new Date().toISOString().split('T')[0];
     const todayBookings = bookings.filter(booking =>
-      booking.startTime.startsWith(today)
+      booking?.startTime && typeof booking.startTime === 'string' && booking.startTime.startsWith(today)
     ).length;
 
     setStats({
       totalLabs: labs.length,
-      availableLabs: labs.filter(lab => lab.isAvailable).length,
+      availableLabs: labs.filter(lab => lab?.isAvailable !== false && (lab?.status === 'ACTIVE' || lab?.status === 'active')).length,
       totalBookings: bookings.length,
       pendingBookings: pendingBookings.length,
       todayBookings,
@@ -61,18 +61,25 @@ export const Dashboard = () => {
     <div className="card">
       <h3 className="card-title">Hoạt động gần đây</h3>
       <ul className="timeline">
-        {events.slice(0, 5).map((event) => (
-          <li key={event.id} className="timeline-item">
-            <div className="timeline-icon">
-              <Activity size={16} color="#fff" />
-            </div>
-            <div className="timeline-content">
-              <p>{event.description}</p>
-              <span>{new Date(event.timestamp).toLocaleDateString('vi-VN')}</span>
-            </div>
-          </li>
-        ))}
-        {events.length === 0 && <p className="empty">Chưa có hoạt động nào</p>}
+        {Array.isArray(events) && events.length > 0 ? (
+          events.slice(0, 5).map((event) => {
+            const eventId = event.id || event.eventId;
+            const timestamp = event.timestamp || event.createdAt || new Date().toISOString();
+            return (
+              <li key={eventId} className="timeline-item">
+                <div className="timeline-icon">
+                  <Activity size={16} color="#fff" />
+                </div>
+                <div className="timeline-content">
+                  <p>{event.description || event.message || 'N/A'}</p>
+                  <span>{new Date(timestamp).toLocaleDateString('vi-VN')}</span>
+                </div>
+              </li>
+            );
+          })
+        ) : (
+          <p className="empty">Chưa có hoạt động nào</p>
+        )}
       </ul>
     </div>
   );
@@ -80,7 +87,7 @@ export const Dashboard = () => {
   const UpcomingBookings = () => {
     const today = new Date();
     const upcomingBookings = bookings
-      .filter(b => new Date(b.startTime) > today && b.status === 'approved')
+      .filter(b => b?.startTime && !isNaN(new Date(b.startTime).getTime()) && new Date(b.startTime) > today && b.status === 'approved')
       .sort((a, b) => new Date(a.startTime) - new Date(b.startTime))
       .slice(0, 5);
 
@@ -90,20 +97,20 @@ export const Dashboard = () => {
         {upcomingBookings.length > 0 ? (
           <div className="upcoming-list">
             {upcomingBookings.map((booking) => {
-              const lab = labs.find(l => l.id === booking.labId);
+              const lab = labs.find(l => (l.id === booking.labId) || (l.labId === booking.labId));
               return (
-                <div key={booking.id} className="upcoming-item">
+                <div key={booking.id || booking.bookingId} className="upcoming-item">
                   <div>
-                    <p className="upcoming-lab">{lab?.name}</p>
-                    <p className="upcoming-purpose">{booking.purpose}</p>
+                    <p className="upcoming-lab">{lab?.name || 'N/A'}</p>
+                    <p className="upcoming-purpose">{booking.purpose || 'N/A'}</p>
                   </div>
                   <div className="upcoming-time">
-                    <p>{new Date(booking.startTime).toLocaleDateString('vi-VN')}</p>
+                    <p>{booking.startTime ? new Date(booking.startTime).toLocaleDateString('vi-VN') : 'N/A'}</p>
                     <p>
-                      {new Date(booking.startTime).toLocaleTimeString('vi-VN', {
+                      {booking.startTime ? new Date(booking.startTime).toLocaleTimeString('vi-VN', {
                         hour: '2-digit',
                         minute: '2-digit',
-                      })}
+                      }) : 'N/A'}
                     </p>
                   </div>
                 </div>
@@ -135,25 +142,33 @@ export const Dashboard = () => {
         <h3 className="card-title">Trạng thái phòng Lab</h3>
         <div className="labs-grid">
           {labs.length > 0 ? (
-            labs.map((lab) => (
-              <div key={lab.id} className={`lab-card ${lab.isAvailable ? 'available' : 'maintenance'}`}>
-                <div className="lab-header">
-                  <div className="lab-icon">
-                    <Building2 size={20} />
+            labs.map((lab) => {
+              const labId = lab.id || lab.labId;
+              const isAvailable = lab.isAvailable !== false && (lab.status === 'ACTIVE' || lab.status === 'active' || lab.status === 'Active');
+              const operatingHours = lab.operatingHours || lab.operating_hours || {};
+              const startTime = operatingHours.start || operatingHours.startTime || 'N/A';
+              const endTime = operatingHours.end || operatingHours.endTime || 'N/A';
+              
+              return (
+                <div key={labId} className={`lab-card ${isAvailable ? 'available' : 'maintenance'}`}>
+                  <div className="lab-header">
+                    <div className="lab-icon">
+                      <Building2 size={20} />
+                    </div>
+                    <div className="lab-info">
+                      <p className="lab-name">{lab.name || 'N/A'}</p>
+                      <p className="lab-location">{lab.location || 'N/A'}</p>
+                    </div>
+                    <div className={`lab-status ${isAvailable ? 'active' : 'maintenance'}`}>
+                      {isAvailable ? 'Hoạt động' : 'Bảo trì'}
+                    </div>
                   </div>
-                  <div className="lab-info">
-                    <p className="lab-name">{lab.name}</p>
-                    <p className="lab-location">{lab.location}</p>
-                  </div>
-                  <div className={`lab-status ${lab.isAvailable ? 'active' : 'maintenance'}`}>
-                    {lab.isAvailable ? 'Hoạt động' : 'Bảo trì'}
-                  </div>
+                  <p className="lab-meta">
+                    Sức chứa: {lab.capacity || 'N/A'} người • Giờ hoạt động: {startTime} - {endTime}
+                  </p>
                 </div>
-                <p className="lab-meta">
-                  Sức chứa: {lab.capacity} người • Giờ hoạt động: {lab.operatingHours.start} - {lab.operatingHours.end}
-                </p>
-              </div>
-            ))
+              );
+            })
           ) : (
             <p className="empty">Chưa có phòng lab nào được thiết lập</p>
           )}

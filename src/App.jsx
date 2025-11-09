@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useAuthStore } from './store';
 import { AuthWrapper } from './components/AuthWrapper';
 import { Layout } from './components/Layout';
+import ErrorBoundary from './components/ErrorBoundary';
 import { Dashboard } from './pages/Dashboard';
 import { BookingPage } from './pages/BookingPage';
 import { ApprovalPage } from './pages/ApprovalPage';
@@ -46,13 +47,19 @@ function App() {
   };
 
   if (!isAuthenticated) {
-    return <AuthWrapper />;
+    return (
+      <ErrorBoundary>
+        <AuthWrapper />
+      </ErrorBoundary>
+    );
   }
 
   return (
-    <Layout currentPage={currentPage} onNavigate={setCurrentPage}>
-      {renderPage()}
-    </Layout>
+    <ErrorBoundary>
+      <Layout currentPage={currentPage} onNavigate={setCurrentPage}>
+        {renderPage()}
+      </Layout>
+    </ErrorBoundary>
   );
 }
 

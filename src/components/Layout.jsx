@@ -64,10 +64,10 @@ export const Layout = ({ children, currentPage, onNavigate }) => {
           <div className="topbar-right">
             <div className="user-profile">
               <div className="user-avatar">
-                {user?.name?.charAt(0)}
+                {(user?.fullName || user?.name || user?.email || 'U')[0].toUpperCase()}
               </div>
               <div className="user-info">
-                <span className="user-name">{user?.name}</span>
+                <span className="user-name">{user?.fullName || user?.name || user?.email || 'User'}</span>
                 <span className="user-role">{user?.role || 'Lab Member'}</span>
               </div>
               <button onClick={logout} className="logout-btn">

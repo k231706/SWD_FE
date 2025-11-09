@@ -55,3 +55,13 @@ export const deleteRequest = async (id) => {
   }
 };
 
+// PUT /requests/{requestId}/approve/{staffId} - Approve request
+export const approveRequest = async (requestId, staffId) => {
+  try {
+    const response = await apiClient.put(`/requests/${requestId}/approve/${staffId}`);
+    return response.data;
+  } catch (error) {
+    console.error('Approve request error:', error);
+    throw error;
+  }
+};

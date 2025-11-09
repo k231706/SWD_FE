@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useLabStore, useAuthStore } from "../store";
+import { getAllRequests, createRequest, updateRequest, approveRequest } from "../api/requests";
 import {
   Key,
   Clock,
@@ -29,37 +30,20 @@ export const AccessRequestPage = () => {
 
   useEffect(() => {
     fetchLabs();
-    mockFetchAccessRequests();
+    fetchAccessRequests();
   }, [fetchLabs]);
 
-  const mockFetchAccessRequests = async () => {
+  const fetchAccessRequests = async () => {
     setIsLoading(true);
-    await new Promise((resolve) => setTimeout(resolve, 500));
-
-    const mockRequests = [
-      {
-        id: "1",
-        labId: "1",
-        requesterId: "2",
-        requestType: "urgent_open",
-        reason: "Sinh viên cần vào lab để lấy đồ án, cửa chưa mở đúng giờ",
-        status: "pending",
-        createdAt: new Date().toISOString(),
-      },
-      {
-        id: "2",
-        labId: "2",
-        requesterId: "3",
-        requestType: "urgent_close",
-        reason: "Phát hiện máy tính chưa tắt, cần vào tắt để đảm bảo an toàn",
-        status: "in_progress",
-        securityGuardId: "4",
-        createdAt: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
-      },
-    ];
-
-    setAccessRequests(mockRequests);
-    setIsLoading(false);
+    try {
+      const requests = await getAllRequests();
+      setAccessRequests(Array.isArray(requests) ? requests : []);
+    } catch (error) {
+      console.error('Failed to fetch access requests:', error);
+      setAccessRequests([]);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleSubmitRequest = async (e) => {
@@ -67,23 +51,25 @@ export const AccessRequestPage = () => {
     if (!newRequest.labId || !newRequest.reason.trim()) return;
 
     setIsLoading(true);
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    try {
+      const requestData = {
+        labId: newRequest.labId,
+        requesterId: user?.id || user?.userId,
+        requestType: newRequest.requestType,
+        reason: newRequest.reason,
+        status: "pending",
+      };
 
-    const request = {
-      id: Date.now().toString(),
-      labId: newRequest.labId,
-      requesterId: user?.id || "",
-      requestType: newRequest.requestType,
-      reason: newRequest.reason,
-      status: "pending",
-      createdAt: new Date().toISOString(),
-    };
-
-    setAccessRequests((prev) => [request, ...prev]);
-    setNewRequest({ labId: "", requestType: "urgent_open", reason: "" });
-    setIsLoading(false);
-    setShowSuccess(true);
-    setTimeout(() => setShowSuccess(false), 5000);
+      const createdRequest = await createRequest(requestData);
+      setAccessRequests((prev) => [createdRequest, ...prev]);
+      setNewRequest({ labId: "", requestType: "urgent_open", reason: "" });
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 5000);
+    } catch (error) {
+      console.error('Failed to create request:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleImageUpload = (e) => {
@@ -101,20 +87,33 @@ export const AccessRequestPage = () => {
     });
   };
 
-  const handleAcceptRequest = (id) => {
-    setAccessRequests((prev) =>
-      prev.map((r) =>
-        r.id === id ? { ...r, status: "in_progress", securityGuardId: user?.id } : r
-      )
-    );
+  const handleAcceptRequest = async (id) => {
+    if (!user?.id && !user?.userId) return;
+    
+    setIsLoading(true);
+    try {
+      const staffId = user?.id || user?.userId;
+      await approveRequest(id, staffId);
+      // Refresh requests after approval
+      await fetchAccessRequests();
+    } catch (error) {
+      console.error('Failed to approve request:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleCompleteRequest = (id) => {
-    setAccessRequests((prev) =>
-      prev.map((r) =>
-        r.id === id ? { ...r, status: "completed", resolvedAt: new Date().toISOString() } : r
-      )
-    );
+  const handleCompleteRequest = async (id) => {
+    setIsLoading(true);
+    try {
+      await updateRequest(id, { status: 'completed', resolvedAt: new Date().toISOString() });
+      // Refresh requests after completion
+      await fetchAccessRequests();
+    } catch (error) {
+      console.error('Failed to complete request:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const RequestCard = ({ request }) => {

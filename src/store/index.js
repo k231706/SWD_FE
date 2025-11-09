@@ -2,100 +2,25 @@ import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { googleSignIn, signIn as apiSignIn } from '../api/auth';
 import { signInWithGoogle as firebaseSignInWithGoogle } from '../firebase/auth';
-
-// Mock data for development
-const mockUsers = [
-  {
-    id: '1',
-    name: 'Nguyễn Văn A',
-    email: 'admin@university.edu.vn',
-    role: 'lab_manager',
-    department: 'Khoa Công nghệ Thông tin',
-    isActive: true,
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: '2',
-    name: 'Trần Thị B',
-    email: 'student@university.edu.vn',
-    role: 'lab_member',
-    department: 'Khoa Công nghệ Thông tin',
-    isActive: true,
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: '3',
-    name: 'Nguyễn Văn C',
-    email: 'security@university.edu.vn',
-    role: 'security_guard',
-    isActive: true,
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: '4',
-    name: 'Lê Thị D',
-    email: 'staff@university.edu.vn',
-    role: 'staff',
-    department: 'Phòng Đào tạo',
-    isActive: true,
-    createdAt: new Date().toISOString(),
-  },
-];
-
-const mockLabs = [
-  {
-    id: '1',
-    name: 'Lab Tin học 1',
-    description: 'Phòng lab tin học cơ bản với 30 máy tính',
-    location: 'Tầng 2, Tòa A',
-    capacity: 30,
-    equipment: ['Máy tính PC', 'Máy chiếu', 'Điều hòa', 'Camera an ninh'],
-    departmentId: '1',
-    isAvailable: true,
-    operatingHours: { start: '07:00', end: '22:00' },
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: '2',
-    name: 'Lab Mạng máy tính',
-    description: 'Phòng lab chuyên về mạng và bảo mật',
-    location: 'Tầng 3, Tòa A',
-    capacity: 25,
-    equipment: ['Router Cisco', 'Switch', 'Cable tester', 'Máy tính chuyên dụng'],
-    departmentId: '1',
-    isAvailable: true,
-    operatingHours: { start: '08:00', end: '20:00' },
-    createdAt: new Date().toISOString(),
-  },
-];
-
-const mockDepartments = [
-  {
-    id: '1',
-    name: 'Khoa Công nghệ Thông tin',
-    description: 'Khoa đào tạo về tin học và công nghệ thông tin',
-    labManagerIds: ['1'],
-    createdAt: new Date().toISOString(),
-  },
-];
-
-// Utility function to load users from localStorage or use mock data
-const loadUsers = () => {
-  try {
-    const stored = localStorage.getItem('lab_users');
-    return stored ? JSON.parse(stored) : mockUsers;
-  } catch {
-    return mockUsers;
-  }
-};
-
-const saveUsers = (users) => {
-  try {
-    localStorage.setItem('lab_users', JSON.stringify(users));
-  } catch (error) {
-    console.warn('Could not save users to localStorage:', error);
-  }
-};
+import {
+  getAllUsers as apiGetAllUsers,
+  getUserById as apiGetUserById,
+  createUser as apiCreateUser,
+  updateUser as apiUpdateUser,
+  deleteUser as apiDeleteUser,
+  setUserAsAdmin as apiSetUserAsAdmin,
+  getUserAdminStatus as apiGetUserAdminStatus
+} from '../api/users';
+import {
+  getAllLabs as apiGetAllLabs,
+  getLabById as apiGetLabById,
+  createLab as apiCreateLab,
+  updateLab as apiUpdateLab,
+  deleteLab as apiDeleteLab,
+  updateLabStatus as apiUpdateLabStatus,
+  assignRoomSlotsByDate as apiAssignRoomSlotsByDate,
+  getRoomSlotsByLabId as apiGetRoomSlotsByLabId
+} from '../api/labs';
 
 // Auth Store
 export const useAuthStore = create(
@@ -104,7 +29,7 @@ export const useAuthStore = create(
       user: null,
       isAuthenticated: false,
       isLoading: false,
-      users: loadUsers(),
+      users: [],
 
       login: async (email, password) => {
         set({ isLoading: true });
@@ -113,28 +38,35 @@ export const useAuthStore = create(
           // Call API
           const response = await apiSignIn(email, password);
           
+          // Save token if provided
+          if (response.token || response.accessToken) {
+            localStorage.setItem('token', response.token || response.accessToken);
+          }
+          
           // Store user info
           set({ 
-            user: response.user, 
+            user: response.user || {}, 
             isAuthenticated: true, 
             isLoading: false 
           });
-          return true;
+          return { success: true };
         } catch (error) {
           console.error('Login failed:', error);
-          
-          // Fallback to mock data for development
-          await new Promise((resolve) => setTimeout(resolve, 1000));
-          const { users } = get();
-          const user = users.find((u) => u.email === email);
-
-          if (user && password === 'password') {
-            set({ user, isAuthenticated: true, isLoading: false });
-            return true;
-          }
-
           set({ isLoading: false });
-          return false;
+          
+          // Return detailed error information
+          const errorMessage = error.response?.data?.message || 
+                              error.response?.data?.error || 
+                              error.message || 
+                              'Đăng nhập thất bại';
+          
+          const statusCode = error.response?.status;
+          
+          return { 
+            success: false, 
+            error: errorMessage,
+            statusCode: statusCode
+          };
         }
       },
 
@@ -145,9 +77,14 @@ export const useAuthStore = create(
           // Call Google Sign In API
           const response = await googleSignIn(token);
           
+          // Save token if provided
+          if (response.token || response.accessToken) {
+            localStorage.setItem('token', response.token || response.accessToken);
+          }
+          
           // Store user info
           set({ 
-            user: response.user, 
+            user: response.user || {}, 
             isAuthenticated: true, 
             isLoading: false 
           });
@@ -169,6 +106,12 @@ export const useAuthStore = create(
           // Optionally send token to backend
           try {
             const response = await googleSignIn(result.idToken);
+            
+            // Save token if provided
+            if (response.token || response.accessToken) {
+              localStorage.setItem('token', response.token || response.accessToken);
+            }
+            
             // If backend returns user info, use it
             set({ 
               user: response.user || result.user, 
@@ -178,6 +121,10 @@ export const useAuthStore = create(
           } catch (backendError) {
             // If backend fails, use Firebase user directly
             console.warn('Backend login failed, using Firebase user:', backendError);
+            // Save Firebase ID token for API calls
+            if (result.idToken) {
+              localStorage.setItem('token', result.idToken);
+            }
             set({ 
               user: {
                 id: result.user.uid,
@@ -201,56 +148,153 @@ export const useAuthStore = create(
       register: async (userData) => {
         set({ isLoading: true });
 
-        await new Promise((resolve) => setTimeout(resolve, 1000));
+        try {
+          // Call API to create user
+          const newUser = await apiCreateUser(userData);
+          
+          // Save token if provided
+          if (newUser.token || newUser.accessToken) {
+            localStorage.setItem('token', newUser.token || newUser.accessToken);
+          }
+          
+          set({
+            user: newUser,
+            isAuthenticated: true,
+            isLoading: false,
+          });
 
-        const { users } = get();
-
-        const existingUser = users.find((u) => u.email === userData.email);
-        if (existingUser) {
+          return true;
+        } catch (error) {
+          console.error('Register failed:', error);
           set({ isLoading: false });
           return false;
         }
-
-        const newUser = {
-          id: Date.now().toString(),
-          name: userData.name,
-          email: userData.email,
-          role: userData.role,
-          department: userData.department,
-          isActive: true,
-          createdAt: new Date().toISOString(),
-        };
-
-        const updatedUsers = [...users, newUser];
-        saveUsers(updatedUsers);
-
-        set({
-          users: updatedUsers,
-          user: newUser,
-          isAuthenticated: true,
-          isLoading: false,
-        });
-
-        return true;
       },
 
       logout: () => {
-        set({ user: null, isAuthenticated: false });
+        // Clear token from localStorage
+        localStorage.removeItem('token');
+        localStorage.removeItem('accessToken');
+        set({ user: null, isAuthenticated: false, users: [] });
       },
 
       updateUser: (userData) => {
-        const { user, users } = get();
+        const { user } = get();
         if (user) {
           const updatedUser = { ...user, ...userData };
-          const updatedUsers = users.map((u) =>
-            u.id === user.id ? updatedUser : u
-          );
-
-          saveUsers(updatedUsers);
-          set({ user: updatedUser, users: updatedUsers });
+          set({ user: updatedUser });
         }
       },
 
+      // Fetch all users from API
+      fetchAllUsers: async () => {
+        set({ isLoading: true });
+        try {
+          const users = await apiGetAllUsers();
+          const normalizedUsers = Array.isArray(users) ? users : [];
+          set({ users: normalizedUsers, isLoading: false });
+          return normalizedUsers;
+        } catch (error) {
+          console.error('Failed to fetch users:', error);
+          set({ users: [], isLoading: false });
+          throw error;
+        }
+      },
+
+      // Get user by ID from API
+      fetchUserById: async (id) => {
+        set({ isLoading: true });
+        try {
+          const user = await apiGetUserById(id);
+          set({ isLoading: false });
+          return user;
+        } catch (error) {
+          console.error('Failed to fetch user by ID:', error);
+          set({ isLoading: false });
+          throw error;
+        }
+      },
+
+      // Create new user via API
+      createUser: async (userData) => {
+        set({ isLoading: true });
+        try {
+          const newUser = await apiCreateUser(userData);
+          const { users } = get();
+          set({ users: [newUser, ...users], isLoading: false });
+          return newUser;
+        } catch (error) {
+          console.error('Failed to create user:', error);
+          set({ isLoading: false });
+          throw error;
+        }
+      },
+
+      // Update user via API
+      updateUserById: async (id, userData) => {
+        set({ isLoading: true });
+        try {
+          const updatedUser = await apiUpdateUser(id, userData);
+          const { users } = get();
+          const updatedUsers = users.map((u) => 
+            (u.userId === id || u.id === id) ? updatedUser : u
+          );
+          set({ users: updatedUsers, isLoading: false });
+          return updatedUser;
+        } catch (error) {
+          console.error('Failed to update user:', error);
+          set({ isLoading: false });
+          throw error;
+        }
+      },
+
+      // Delete user via API
+      deleteUserById: async (id) => {
+        set({ isLoading: true });
+        try {
+          await apiDeleteUser(id);
+          const { users } = get();
+          const filteredUsers = users.filter((u) => u.userId !== id && u.id !== id);
+          set({ users: filteredUsers, isLoading: false });
+          return true;
+        } catch (error) {
+          console.error('Failed to delete user:', error);
+          set({ isLoading: false });
+          throw error;
+        }
+      },
+
+      // Set user as admin via API
+      setUserAsAdmin: async (id, adminData = { isAdmin: true }) => {
+        set({ isLoading: true });
+        try {
+          const result = await apiSetUserAsAdmin(id, adminData);
+          // Refresh users list
+          const users = await apiGetAllUsers();
+          set({ users: Array.isArray(users) ? users : [], isLoading: false });
+          return result;
+        } catch (error) {
+          console.error('Failed to set user as admin:', error);
+          set({ isLoading: false });
+          throw error;
+        }
+      },
+
+      // Get user admin status via API
+      getUserAdminStatus: async (id) => {
+        set({ isLoading: true });
+        try {
+          const status = await apiGetUserAdminStatus(id);
+          set({ isLoading: false });
+          return status;
+        } catch (error) {
+          console.error('Failed to get user admin status:', error);
+          set({ isLoading: false });
+          throw error;
+        }
+      },
+
+      // Legacy methods (for backward compatibility)
       getAllUsers: () => {
         return get().users;
       },
@@ -267,22 +311,147 @@ export const useAuthStore = create(
 // Lab Store
 export const useLabStore = create(
   devtools(
-    (set) => ({
+    (set, get) => ({
       labs: [],
       departments: [],
       selectedLab: null,
       isLoading: false,
 
+      // GET /labs - Get all labs
       fetchLabs: async () => {
         set({ isLoading: true });
-        await new Promise((resolve) => setTimeout(resolve, 500));
-        set({ labs: mockLabs, isLoading: false });
+        try {
+          const labs = await apiGetAllLabs();
+          const labsArray = Array.isArray(labs) ? labs : [];
+          set({ labs: labsArray, isLoading: false });
+          return labsArray;
+        } catch (error) {
+          console.error('Failed to fetch labs:', error);
+          set({ labs: [], isLoading: false });
+          throw error;
+        }
+      },
+
+      // GET /labs/{id} - Get lab by ID
+      fetchLabById: async (id) => {
+        set({ isLoading: true });
+        try {
+          const lab = await apiGetLabById(id);
+          set({ isLoading: false });
+          return lab;
+        } catch (error) {
+          console.error('Failed to fetch lab by ID:', error);
+          set({ isLoading: false });
+          throw error;
+        }
+      },
+
+      // POST /labs - Create new lab
+      createLab: async (labData) => {
+        set({ isLoading: true });
+        try {
+          const newLab = await apiCreateLab(labData);
+          const { labs } = get();
+          set({ labs: [newLab, ...labs], isLoading: false });
+          return newLab;
+        } catch (error) {
+          console.error('Failed to create lab:', error);
+          set({ isLoading: false });
+          throw error;
+        }
+      },
+
+      // PUT /labs/{id} - Update lab by ID
+      updateLab: async (id, labData) => {
+        set({ isLoading: true });
+        try {
+          const updatedLab = await apiUpdateLab(id, labData);
+          const { labs } = get();
+          const updatedLabs = labs.map((l) => 
+            (l.labId === id || l.id === id) ? updatedLab : l
+          );
+          set({ labs: updatedLabs, isLoading: false });
+          return updatedLab;
+        } catch (error) {
+          console.error('Failed to update lab:', error);
+          set({ isLoading: false });
+          throw error;
+        }
+      },
+
+      // DELETE /labs/{id} - Delete lab by ID
+      deleteLab: async (id) => {
+        set({ isLoading: true });
+        try {
+          await apiDeleteLab(id);
+          const { labs } = get();
+          const filteredLabs = labs.filter((l) => l.labId !== id && l.id !== id);
+          set({ labs: filteredLabs, isLoading: false });
+          return true;
+        } catch (error) {
+          console.error('Failed to delete lab:', error);
+          set({ isLoading: false });
+          throw error;
+        }
+      },
+
+      // PATCH /labs/{id}/status - Update lab status
+      updateLabStatus: async (id, statusData) => {
+        set({ isLoading: true });
+        try {
+          const updatedLab = await apiUpdateLabStatus(id, statusData);
+          const { labs } = get();
+          const updatedLabs = labs.map((l) => 
+            (l.labId === id || l.id === id) ? updatedLab : l
+          );
+          set({ labs: updatedLabs, isLoading: false });
+          return updatedLab;
+        } catch (error) {
+          console.error('Failed to update lab status:', error);
+          set({ isLoading: false });
+          throw error;
+        }
+      },
+
+      // POST /labs/assign-roomslots-by-date - Assign room slots by date
+      assignRoomSlotsByDate: async (assignData) => {
+        set({ isLoading: true });
+        try {
+          const result = await apiAssignRoomSlotsByDate(assignData);
+          set({ isLoading: false });
+          return result;
+        } catch (error) {
+          console.error('Failed to assign room slots by date:', error);
+          set({ isLoading: false });
+          throw error;
+        }
+      },
+
+      // GET /labs/{labId}/room-slots - Get room slots by lab ID
+      fetchRoomSlotsByLabId: async (labId, date = null) => {
+        set({ isLoading: true });
+        try {
+          const roomSlots = await apiGetRoomSlotsByLabId(labId, date);
+          set({ isLoading: false });
+          return Array.isArray(roomSlots) ? roomSlots : [];
+        } catch (error) {
+          console.error('Failed to fetch room slots by lab ID:', error);
+          set({ isLoading: false });
+          throw error;
+        }
       },
 
       fetchDepartments: async () => {
         set({ isLoading: true });
-        await new Promise((resolve) => setTimeout(resolve, 500));
-        set({ departments: mockDepartments, isLoading: false });
+        try {
+          // TODO: Call departments API when available
+          // const response = await apiClient.get('/departments');
+          // set({ departments: response.data, isLoading: false });
+          set({ departments: [], isLoading: false });
+        } catch (error) {
+          console.error('Failed to fetch departments:', error);
+          set({ departments: [], isLoading: false });
+        }
       },
 
       selectLab: (lab) => {
