@@ -138,16 +138,8 @@ export const LoginForm = ({ onSwitchToRegister }) => {
             Đăng nhập với Google
           </button>
 
-          {/* Demo + Register */}
+          {/* Register */}
           <div className="demo-section">
-            <div className="demo-info">
-              <p className="demo-title">Tài khoản demo có sẵn:</p>
-              <p>• admin@university.edu.vn (Quản lý Lab)</p>
-              <p>• student@university.edu.vn (Sinh viên)</p>
-              <p>• security@university.edu.vn (Bảo vệ)</p>
-              <p>• staff@university.edu.vn (Nhân viên)</p>
-              <p className="demo-pass">Mật khẩu: password</p>
-            </div>
             <button className="register-btn" onClick={onSwitchToRegister}>
               <UserPlus className="btn-icon" />
               Tạo tài khoản mới

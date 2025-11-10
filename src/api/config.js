@@ -13,11 +13,14 @@ export const apiClient = axios.create({
 // Request interceptor to add authentication token
 apiClient.interceptors.request.use(
   (config) => {
-    // Get token from localStorage
-    const token = localStorage.getItem('token') || localStorage.getItem('accessToken');
-    
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+    // Don't attach token for public auth endpoints
+    const publicEndpoints = ['/auth/signin', '/auth/signup', '/auth/register'];
+    const isPublic = publicEndpoints.some((p) => config.url?.includes(p) || config.url?.startsWith(p));
+    if (!isPublic) {
+      const token = localStorage.getItem('token') || localStorage.getItem('accessToken');
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
     }
     
     return config;

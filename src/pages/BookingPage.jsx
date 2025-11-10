@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLabStore, useBookingStore, useAuthStore } from '../store';
-import { Calendar, Clock, Send, CheckCircle } from 'lucide-react';
+import { Calendar, Clock, CheckCircle } from 'lucide-react';
 import '../styles/BookingPage.css';
 
 // CHANGED: Định nghĩa các ca học cố định
